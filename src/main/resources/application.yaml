@@ -1,3 +1,15 @@
 spring:
   application:
     name: chatbot
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/chatbot}
+    username: ${DB_USERNAME:chatbot_user}
+    password: ${DB_PASSWORD:chatbot_pass}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
