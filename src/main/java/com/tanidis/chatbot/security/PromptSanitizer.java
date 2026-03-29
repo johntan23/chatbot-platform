@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 public class PromptSanitizer {
 
     private static final List<Pattern> INJECTION_PATTERNS = List.of(
-            Pattern.compile("ignore (all |previous |prior )?instructions", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("ignore.*(instructions|previous|prior)", Pattern.CASE_INSENSITIVE),
             Pattern.compile("you are now", Pattern.CASE_INSENSITIVE),
             Pattern.compile("forget (everything|all|previous)", Pattern.CASE_INSENSITIVE),
             Pattern.compile("system prompt", Pattern.CASE_INSENSITIVE),
@@ -23,7 +23,7 @@ public class PromptSanitizer {
 
         for (Pattern pattern : INJECTION_PATTERNS) {
             if (pattern.matcher(input).find()) {
-                return "Το μήνυμα απορρίφθηκε για λόγους ασφαλείας.";
+                return "The message was rejected for security reasons.";
             }
         }
 

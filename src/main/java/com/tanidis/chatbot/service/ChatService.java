@@ -26,6 +26,14 @@ public class ChatService {
     public ChatResponse sendMessage(ChatRequest request) {
         String sanitized = promptSanitizer.sanitize(request.getMessage());
 
+        if (!sanitized.equals(request.getMessage().trim())) {
+            ChatResponse rejectedResponse = new ChatResponse();
+            rejectedResponse.setConversationId(request.getConversationId());
+            rejectedResponse.setMessage("The message was rejected for security reasons.");
+            rejectedResponse.setRole("ASSISTANT");
+            return rejectedResponse;
+        }
+
         Conversation conversation;
         if (request.getConversationId() == null) {
             Conversation newConv = new Conversation();
