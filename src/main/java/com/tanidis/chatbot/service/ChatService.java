@@ -26,13 +26,20 @@ public class ChatService {
     public ChatResponse sendMessage(ChatRequest request) {
         String sanitized = promptSanitizer.sanitize(request.getMessage());
 
-        Conversation conversation = conversationRepo
-                .findById(request.getConversationId())
-                .orElseGet(() -> {
-                    Conversation newConv = new Conversation();
-                    newConv.setTitle("New Conversation");
-                    return conversationRepo.save(newConv);
-                });
+        Conversation conversation;
+        if (request.getConversationId() == null) {
+            Conversation newConv = new Conversation();
+            newConv.setTitle("New Conversation");
+            conversation = conversationRepo.save(newConv);
+        } else {
+            conversation = conversationRepo
+                    .findById(request.getConversationId())
+                    .orElseGet(() -> {
+                        Conversation newConv = new Conversation();
+                        newConv.setTitle("New Conversation");
+                        return conversationRepo.save(newConv);
+                    });
+        }
 
         Message userMessage = new Message();
         userMessage.setRole(Message.Role.USER);
