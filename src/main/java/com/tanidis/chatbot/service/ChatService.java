@@ -42,6 +42,14 @@ public class ChatService {
             return rejectedResponse;
         }
 
+        String systemPrompt = (request.getSystemPrompt() != null && !request.getSystemPrompt().isBlank())
+                ? request.getSystemPrompt()
+                : DEFAULT_SYSTEM_PROMPT;
+
+        Double temperature = (request.getTemperature() != null)
+                ? request.getTemperature()
+                : DEFAULT_TEMPERATURE;
+
         Conversation conversation;
         if (request.getConversationId() == null) {
             Conversation newConv = new Conversation();
@@ -66,7 +74,7 @@ public class ChatService {
         List<Message> history = messageRepo
                 .findByConversationIdOrderByCreatedAtAsc(conversation.getId());
 
-        String aiResponse = aiService.chat(history, DEFAULT_SYSTEM_PROMPT, DEFAULT_TEMPERATURE);
+        String aiResponse = aiService.chat(history, systemPrompt, temperature);
 
         Message assistantMessage = new Message();
         assistantMessage.setRole(Message.Role.ASSISTANT);

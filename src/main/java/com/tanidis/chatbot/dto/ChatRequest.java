@@ -7,4 +7,6 @@ public class ChatRequest {
 
     private Long conversationId;
     private String message;
+    private String systemPrompt;
+    private Double temperature;
 }
