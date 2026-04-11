@@ -2,6 +2,8 @@ package com.tanidis.chatbot.service;
 
 import com.tanidis.chatbot.dto.ChatRequest;
 import com.tanidis.chatbot.dto.ChatResponse;
+import com.tanidis.chatbot.dto.ConversationDTO;
+import com.tanidis.chatbot.dto.MessageDTO;
 import com.tanidis.chatbot.model.Conversation;
 import com.tanidis.chatbot.model.Message;
 import com.tanidis.chatbot.repository.ConversationRepo;
@@ -9,6 +11,7 @@ import com.tanidis.chatbot.repository.MessageRepo;
 import com.tanidis.chatbot.security.PromptSanitizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
@@ -31,61 +34,94 @@ public class ChatService {
         """;
     private static final Double DEFAULT_TEMPERATURE = 0.7;
 
+    @Transactional
     public ChatResponse sendMessage(ChatRequest request) {
         String sanitized = promptSanitizer.sanitize(request.getMessage());
 
         if (!sanitized.equals(request.getMessage().trim())) {
-            ChatResponse rejectedResponse = new ChatResponse();
-            rejectedResponse.setConversationId(request.getConversationId());
-            rejectedResponse.setMessage("The message was rejected for security reasons.");
-            rejectedResponse.setRole("ASSISTANT");
-            return rejectedResponse;
+            return buildRejectedResponse(request.getConversationId());
         }
 
-        String systemPrompt = (request.getSystemPrompt() != null && !request.getSystemPrompt().isBlank())
-                ? request.getSystemPrompt()
-                : DEFAULT_SYSTEM_PROMPT;
+        String systemPrompt = resolveSystemPrompt(request.getSystemPrompt());
+        Double temperature = resolveTemperature(request.getTemperature());
+        Conversation conversation = resolveConversation(request.getConversationId());
 
-        Double temperature = (request.getTemperature() != null)
-                ? request.getTemperature()
-                : DEFAULT_TEMPERATURE;
-
-        Conversation conversation;
-        if (request.getConversationId() == null) {
-            Conversation newConv = new Conversation();
-            newConv.setTitle("New Conversation");
-            conversation = conversationRepo.save(newConv);
-        } else {
-            conversation = conversationRepo
-                    .findById(request.getConversationId())
-                    .orElseGet(() -> {
-                        Conversation newConv = new Conversation();
-                        newConv.setTitle("New Conversation");
-                        return conversationRepo.save(newConv);
-                    });
-        }
-
-        Message userMessage = new Message();
-        userMessage.setRole(Message.Role.USER);
-        userMessage.setContent(sanitized);
-        userMessage.setConversation(conversation);
-        messageRepo.save(userMessage);
+        saveMessage(conversation, Message.Role.USER, sanitized);
 
         List<Message> history = messageRepo
                 .findByConversationIdOrderByCreatedAtAsc(conversation.getId());
 
         String aiResponse = aiService.chat(history, systemPrompt, temperature);
 
-        Message assistantMessage = new Message();
-        assistantMessage.setRole(Message.Role.ASSISTANT);
-        assistantMessage.setContent(aiResponse);
-        assistantMessage.setConversation(conversation);
-        messageRepo.save(assistantMessage);
+        saveMessage(conversation, Message.Role.ASSISTANT, aiResponse);
 
         ChatResponse response = new ChatResponse();
         response.setConversationId(conversation.getId());
         response.setMessage(aiResponse);
         response.setRole("ASSISTANT");
         return response;
+    }
+
+    private ChatResponse buildRejectedResponse(Long conversationId) {
+        ChatResponse rejected = new ChatResponse();
+        rejected.setConversationId(conversationId);
+        rejected.setMessage("The message was rejected for security reasons.");
+        rejected.setRole("ASSISTANT");
+        return rejected;
+    }
+
+    private String resolveSystemPrompt(String systemPrompt) {
+        return (systemPrompt != null && !systemPrompt.isBlank())
+                ? systemPrompt
+                : DEFAULT_SYSTEM_PROMPT;
+    }
+
+    private Double resolveTemperature(Double temperature) {
+        if (temperature == null) return DEFAULT_TEMPERATURE;
+        if (temperature < 0.0) return 0.0;
+        if (temperature > 1.0) return 1.0;
+        return temperature;
+    }
+
+    private Conversation resolveConversation(Long conversationId) {
+        if (conversationId == null) {
+            return createNewConversation();
+        }
+        return conversationRepo.findById(conversationId)
+                .orElseGet(this::createNewConversation);
+    }
+
+    private Conversation createNewConversation() {
+        Conversation conv = new Conversation();
+        conv.setTitle("New Conversation");
+        return conversationRepo.save(conv);
+    }
+
+    private void saveMessage(Conversation conversation, Message.Role role, String content) {
+        Message message = new Message();
+        message.setRole(role);
+        message.setContent(content);
+        message.setConversation(conversation);
+        messageRepo.save(message);
+    }
+
+    public List<ConversationDTO> getConversations() {
+        return conversationRepo.findAll().stream()
+                .map(conv -> new ConversationDTO(
+                        conv.getId(),
+                        conv.getTitle(),
+                        conv.getCreatedAt()))
+                .toList();
+    }
+
+    public List<MessageDTO> getMessages(Long conversationId) {
+        return messageRepo.findByConversationIdOrderByCreatedAtAsc(conversationId)
+                .stream()
+                .map(msg -> new MessageDTO(
+                        msg.getId(),
+                        msg.getRole().name(),
+                        msg.getContent(),
+                        msg.getCreatedAt()))
+                .toList();
     }
 }

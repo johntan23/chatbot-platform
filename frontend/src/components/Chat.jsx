@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import axios from 'axios'
 import Settings from './Settings'
 import ConversationList from './ConversationList'
+import { api } from '../api'
 import './Chat.css'
 
 function Chat() {
@@ -9,6 +9,7 @@ function Chat() {
   const [input, setInput] = useState('')
   const [conversationId, setConversationId] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
   const [showSettings, setShowSettings] = useState(false)
   const [systemPrompt, setSystemPrompt] = useState('')
   const [temperature, setTemperature] = useState(0.7)
@@ -20,13 +21,14 @@ function Chat() {
     setMessages(prev => [...prev, userMessage])
     setInput('')
     setLoading(true)
+    setError(null)
 
     try {
-      const response = await axios.post('http://localhost:8080/api/chat/message', {
-        conversationId: conversationId,
+      const response = await api.sendMessage({
+        conversationId,
         message: input,
         systemPrompt: systemPrompt || null,
-        temperature: temperature
+        temperature
       })
 
       setConversationId(response.data.conversationId)
@@ -34,8 +36,9 @@ function Chat() {
         role: 'ASSISTANT',
         content: response.data.message
       }])
-    } catch (error) {
-      console.error('Error:', error)
+    } catch (err) {
+      console.error('Error:', err)
+      setError('Failed to send message. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -50,21 +53,23 @@ function Chat() {
 
   const handleSelectConversation = async (id) => {
     try {
-      const response = await axios.get(`http://localhost:8080/api/chat/conversations/${id}/messages`)
-      const loadedMessages = response.data.map(msg => ({
+      const response = await api.getMessages(id)
+      setMessages(response.data.map(msg => ({
         role: msg.role,
         content: msg.content
-      }))
-      setMessages(loadedMessages)
+      })))
       setConversationId(id)
-    } catch (error) {
-      console.error('Error loading conversation:', error)
+      setError(null)
+    } catch (err) {
+      console.error('Error loading conversation:', err)
+      setError('Failed to load conversation.')
     }
   }
 
   const handleNewConversation = () => {
     setMessages([])
     setConversationId(null)
+    setError(null)
   }
 
   return (
@@ -88,7 +93,7 @@ function Chat() {
 
         <div className="chat-messages">
           {messages.map((msg, index) => (
-            <div key={index} className={`message ${msg.role.toLowerCase()}`}>
+            <div key={`${msg.role}-${index}`} className={`message ${msg.role.toLowerCase()}`}>
               <div className="message-bubble">
                 {msg.content}
               </div>
@@ -99,6 +104,11 @@ function Chat() {
               <div className="message-bubble loading">
                 Typing...
               </div>
+            </div>
+          )}
+          {error && (
+            <div className="error-message">
+              {error}
             </div>
           )}
         </div>

@@ -4,6 +4,8 @@ import com.tanidis.chatbot.model.Message;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -11,22 +13,23 @@ import java.util.Map;
 public class AIService {
 
     private final RestClient restClient;
+    private final String apiKey;
+    private final String baseUrl;
+    private final String model;
 
-    @Value("${groq.api-key}")
-    private String apiKey;
-
-    @Value("${groq.base-url}")
-    private String baseUrl;
-
-    @Value("${groq.model}")
-    private String model;
-
-    public AIService(RestClient restClient) {
+    public AIService(
+            RestClient restClient,
+            @Value("${groq.api-key}") String apiKey,
+            @Value("${groq.base-url}") String baseUrl,
+            @Value("${groq.model}") String model) {
         this.restClient = restClient;
+        this.apiKey = apiKey;
+        this.baseUrl = baseUrl;
+        this.model = model;
     }
 
     public String chat(List<Message> history, String systemPrompt, Double temperature) {
-        List<Map<String, String>> messages = new java.util.ArrayList<>();
+        List<Map<String, String>> messages = new ArrayList<>();
 
         messages.add(Map.of("role", "system", "content", systemPrompt));
 
@@ -43,17 +46,38 @@ public class AIService {
                 "temperature", temperature
         );
 
-        Map response = restClient.post()
-                .uri(baseUrl + "/chat/completions")
-                .header("Authorization", "Bearer " + apiKey)
-                .header("Content-Type", "application/json")
-                .body(requestBody)
-                .retrieve()
-                .body(Map.class);
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> response = restClient.post()
+                    .uri(baseUrl + "/chat/completions")
+                    .header("Authorization", "Bearer " + apiKey)
+                    .header("Content-Type", "application/json")
+                    .body(requestBody)
+                    .retrieve()
+                    .body(Map.class);
 
-        List<Map> choices = (List<Map>) response.get("choices");
-        Map firstChoice = choices.get(0);
-        Map message = (Map) firstChoice.get("message");
-        return (String) message.get("content");
+            if (response == null) {
+                return "Sorry, I could not get a response. Please try again.";
+            }
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
+
+            if (choices == null || choices.isEmpty()) {
+                return "Sorry, I could not get a response. Please try again.";
+            }
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
+
+            if (message == null) {
+                return "Sorry, I could not get a response. Please try again.";
+            }
+
+            return (String) message.get("content");
+
+        } catch (RestClientException e) {
+            return "Sorry, there was an error connecting to the AI service. Please try again.";
+        }
     }
 }

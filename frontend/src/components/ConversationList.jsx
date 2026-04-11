@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import axios from 'axios'
+import { api } from '../api'
 import './ConversationList.css'
 
 function ConversationList({ currentConversationId, onSelectConversation, onNewConversation }) {
@@ -9,9 +9,9 @@ function ConversationList({ currentConversationId, onSelectConversation, onNewCo
      fetchConversations()
  }, [currentConversationId])
 
-  const fetchConversations = async () => {
+const fetchConversations = async () => {
     try {
-      const response = await axios.get('http://localhost:8080/api/chat/conversations')
+      const response = await api.getConversations()
       setConversations(Array.isArray(response.data) ? response.data : [])
     } catch (error) {
       console.error('Error fetching conversations:', error)
