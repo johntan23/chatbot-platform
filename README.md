@@ -21,20 +21,26 @@ A web-based conversational AI platform built with Java Spring Boot, React, and P
 ## Setup & Run
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/johntan23/chatbot-platform.git
 cd chatbot-platform
 ```
 
 2. Create your `.env` file:
+
 ```bash
 cp .env.example .env
 ```
 
-3. Add your Groq API key in `.env`:GROQ_API_KEY=your_groq_api_key_here
+3. Add your Groq API key in `.env`:
 
+```
+GROQ_API_KEY=your_groq_api_key_here
+```
 
 4. Run with Docker:
+
 ```bash
 docker-compose up --build
 ```
@@ -49,6 +55,8 @@ docker-compose up --build
 - Previous conversations are shown in the left sidebar
 
 ## Project Structure
+
+```
 chatbot-platform/
 ├── src/                    # Spring Boot backend
 │   └── main/java/com/tanidis/chatbot/
@@ -66,3 +74,4 @@ chatbot-platform/
 ├── Dockerfile.backend      # Backend Docker image
 ├── Dockerfile.frontend     # Frontend Docker image
 └── nginx.conf              # Nginx configuration
+```
