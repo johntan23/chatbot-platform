@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import axios from 'axios'
 import Settings from './Settings'
+import ConversationList from './ConversationList'
 import './Chat.css'
 
 function Chat() {
@@ -47,8 +48,33 @@ function Chat() {
     }
   }
 
+  const handleSelectConversation = async (id) => {
+    try {
+      const response = await axios.get(`http://localhost:8080/api/chat/conversations/${id}/messages`)
+      const loadedMessages = response.data.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }))
+      setMessages(loadedMessages)
+      setConversationId(id)
+    } catch (error) {
+      console.error('Error loading conversation:', error)
+    }
+  }
+
+  const handleNewConversation = () => {
+    setMessages([])
+    setConversationId(null)
+  }
+
   return (
     <div className="app-container">
+      <ConversationList
+        currentConversationId={conversationId}
+        onSelectConversation={handleSelectConversation}
+        onNewConversation={handleNewConversation}
+      />
+
       <div className="chat-container">
         <div className="chat-header">
           <h1>AI Chatbot</h1>
