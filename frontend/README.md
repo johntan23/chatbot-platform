@@ -1,16 +1,68 @@
-# React + Vite
+# Chatbot Platform
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A web-based conversational AI platform built with Java Spring Boot, React, and PostgreSQL.
 
-Currently, two official plugins are available:
+## Features
+- Real-time chat with AI (powered by Groq API)
+- Conversation history
+- Configurable system prompt and temperature
+- Prompt injection protection
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Tech Stack
+- **Backend:** Java 21, Spring Boot, PostgreSQL
+- **Frontend:** React, Vite
+- **AI:** Groq API (llama-3.3-70b-versatile)
+- **Infrastructure:** Docker, Docker Compose
 
-## React Compiler
+## Prerequisites
+- Docker Desktop
+- Groq API key (free at [console.groq.com](https://console.groq.com))
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Setup & Run
 
-## Expanding the ESLint configuration
+1. Clone the repository:
+```bash
+git clone https://github.com/johntan23/chatbot-platform.git
+cd chatbot-platform
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+2. Create your `.env` file:
+```bash
+cp .env.example .env
+```
+
+3. Add your Groq API key in `.env`:GROQ_API_KEY=your_groq_api_key_here
+
+
+4. Run with Docker:
+```bash
+docker-compose up --build
+```
+
+5. Open your browser at:
+- **Frontend:** http://localhost
+- **Backend API:** http://localhost:8080
+
+## Usage
+- Type a message and press **Enter** or click **Send**
+- Click **⚙️ Settings** to configure system prompt and temperature
+- Previous conversations are shown in the left sidebar
+
+## Project Structure
+chatbot-platform/
+├── src/                    # Spring Boot backend
+│   └── main/java/com/tanidis/chatbot/
+│       ├── controller/     # REST endpoints
+│       ├── service/        # Business logic
+│       ├── model/          # JPA entities
+│       ├── repository/     # Database access
+│       ├── dto/            # Data transfer objects
+│       ├── config/         # Configuration
+│       └── security/       # Prompt sanitizer
+├── frontend/               # React frontend
+│   └── src/
+│       └── components/     # React components
+├── docker-compose.yml      # Docker orchestration
+├── Dockerfile.backend      # Backend Docker image
+├── Dockerfile.frontend     # Frontend Docker image
+└── nginx.conf              # Nginx configuration
