@@ -54,6 +54,20 @@ docker-compose up --build
 - Click **⚙️ Settings** to configure system prompt and temperature
 - Previous conversations are shown in the left sidebar
 
+## Screenshots
+
+### Chat Interface
+![Chat](screenshots/chat_interface.png)
+
+### Settings Panel
+![Settings](screenshots/settings_panel.png)
+
+### Prompt Injection Protection
+![Security](screenshots/prompt_injection.png)
+
+### Conversation History
+![History](screenshots/converstation_history.png)
+
 ## Project Structure
 
 ```
